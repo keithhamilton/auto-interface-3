@@ -8,8 +8,15 @@ pathToPackage=$1
 targetLocation=$2
 targetVolume=$3
 
-
+# load the launch agent
 launchctl load /Library/LaunchAgents/com.wk.pdx.autointerface3.plist
+
+# if a previous net state file exists, trash it
+if [ -e /Users/.previous_netstate ]; then
+	rm /Users/.previous_netstate
+fi
+
+# run the program
 /usr/sbin/ai3.py
 
 
