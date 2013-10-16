@@ -1,0 +1,17 @@
+#!/bin/sh
+## postflight
+##
+## Not supported for flat packages.
+
+pathToScript=$0
+pathToPackage=$1
+targetLocation=$2
+targetVolume=$3
+
+
+launchctl load /Library/LaunchAgents/com.wk.pdx.autointerface3.plist
+/usr/sbin/ai3.py
+
+
+exit 0		## Success
+exit 1		## Failure
