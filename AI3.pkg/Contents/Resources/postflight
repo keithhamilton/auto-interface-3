@@ -18,7 +18,7 @@ fi
 
 # run the program
 /usr/sbin/ai3.py
-
+chmod 777 /Users/.previous_netstate
 
 exit 0		## Success
 exit 1		## Failure
