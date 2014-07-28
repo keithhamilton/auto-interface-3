@@ -34,11 +34,12 @@ sudo cp ${TMP_DIR}/src/${DEST_PATH} /${DEST_PATH}
 sudo rm /Library/LaunchAgents/*autointerface*
 
 # cat out the launchd plist replacing the domain of the process
-sudo cat ${TMP_DIR}/src/${PLIST_PATH}/local.autointerface3.plist | sed 's/local\.autointerface3/com\.keithhamilton\.autointerface3/' > /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
+cat ${TMP_DIR}/src/${PLIST_PATH}/local.autointerface3.plist | sed 's/local\.autointerface3/com\.keithhamilton\.autointerface3/' > ${TMP_DIR}/com.keithhamilton.autointerface3.plist
+sudo mv ${TMP_DIR}/com.keithhamilton.autointerface3.plist /${PLIST_PATH}
 sudo chmod 777 /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
 
 # remove tmp dir
 sudo rm -rf ${TMP_DIR}
 
 # run ai3.py
-python ${DEST_PATH}
+python /${DEST_PATH}
