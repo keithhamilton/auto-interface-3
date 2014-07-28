@@ -9,7 +9,7 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>python</string>
-		<string>/usr/sbin/ai3.py</string>
+		<string>/usr/local/sbin/ai3.py</string>
 	</array>
 	<key>WatchPaths</key>
 	<array>

@@ -91,13 +91,8 @@ def get_service_change(current, previous, wireless_service_name):
 
 def get_hardware_device(service_name):
     port_info=check_output(['networksetup','-listallhardwareports']).split('\n')
-    i=0
-    while i<len(port_info):
-        if search(service_name,port_info[i]):
-            return port_info[i+1].split(': ')[1]
-        else:
-            i+=1
-    return None
+    info = [port_info[i+1].split(': ')[1] for i,x in enumerate(port_info) if search(service_name,port_info[i])]
+    return info[0] if len(info) > 0 else None
 
 def toggle_wireless(wireless_service_name, turnOn=True):
     onOff='on'
@@ -116,7 +111,7 @@ def write_state(flatfile_path, current_service_state):
 
 if __name__=='__main__':
     
-    FLATFILE_PATH='/Users/.previous_netstate'
+    FLATFILE_PATH='/usr/local/lib/auto-interface-3/.previous-netstate'
 
     # get model. If model is Mac Pro, exit
     if not validate_hardware():
