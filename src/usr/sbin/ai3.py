@@ -1,28 +1,15 @@
 #!/usr/bin/python
 
-from subprocess import check_output, call
+from subprocess import check_output, call, STDOUT
 from re import search
 from os import system, path
 
 def validate_hardware():
-    hardware_specs=check_output(['/usr/sbin/system_profiler','SPHardwareDataType'])
-    model=None
-
-    # go through hardware specs and find the model name
-    for item in hardware_specs:
-        if search('Model Name:', item):
-            model=item.split(': ')[1]
-
-    if model == 'Mac Pro':
-        return False
-
-    return True
-
-    #end function
+    hardware_specs=check_output(['/usr/sbin/system_profiler','SPHardwareDataType'], stderr=STDOUT)
+    model = [x for x in hardware_specs if search('Model Name',x)] or ''
+    return any('Mac Pro' in s for s in model)
 
 def get_previous_state(flatfile_path, wireless_service,current_has_display_ethernet=False):
-    print(current_has_display_ethernet)
-    print(flatfile_path)
     previous_service_state = {}
 
     if path.exists(flatfile_path):
@@ -37,118 +24,80 @@ def get_previous_state(flatfile_path, wireless_service,current_has_display_ether
     
     return previous_service_state
 
-    #end function
-
 def get_all_services(wireless_service_name):
     all_services=check_output(['networksetup','-listallnetworkservices']).split('\n')[1:]
-    net_services=[]
-
-    for item in all_services:
-        if search(wireless_service_name,item) or search('Ethernet',item):
-            net_services.append(item)
-
-    return net_services
-
-    #end function
+    return [x for x in all_services if search(wireless_service_name,x) or search('Ethernet',x)]
 
 def get_service_state(service):
-    # try:
-    service_details=check_output(['networksetup', '-getinfo', '{0}'.format(service)]).split('\n')
-    for item in service_details:
-        if search('10.0.', item):
-            return 1
-    return 0
-    # except:
-    #     return 0
+    service_details=[x for x in \
+                     check_output(['networksetup', '-getinfo', '{0}'.format(service)]).split('\n') \
+                     if search('10.0',x)]
 
-    #end function
+    return 1 if len(service_details) > 0 else 0
 
 def get_service_change(current, previous, wireless_service_name):
+    '''
+    Service State Examples:
+
+    no action-------------------------------------------------
+
+    # wireless turned on manually
+    previous: {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}
+    current:  {Ethernet: 0, Wi-Fi: 1, Display Ethernet: 0}
+    condition: bool(current['Wi-Fi'] and not(previous['Ethernet'] or previous['Wi-Fi']))
+
+    # ethernet plugged in when nothing was on
+    previous: {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}
+    current:  {Ethernet: 1, Wi-Fi: 0, Display Ethernet: 0}
+    condition: bool(current['Ethernet'] and not (previous['Ethernet'] or previous['Wi-Fi']))
+
+    # wireless turned off manually
+    previous: {Ethernet: 0, Wi-Fi: 1, Display Ethernet: 0}
+    current:  {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}
+    condition: bool(not (current['Wi-Fi'] or current['Ethernet']) and previous['Wi-Fi'])
+
+    # -----------------------------------------------------------
+
+    turn wireless off -----------------------------------------
+
+    # ethernet plugged in when wi-fi was on
+    previous: {Ethernet: 0, Wi-Fi: 1, Display Ethernet: 0}
+    current:  {Ethernet: 1, Wi-Fi: 1, Display Ethernet: 0}
+    condition: bool((current['Ethernet'] and current['Wi-Fi']) and not previous['Ethernet'])
+
+    # -----------------------------------------------------------
+
+    turn wireless on -----------------------------------------
+
+    # ethernet unplugged when wi-fi was off
+    previous: {Ethernet: 1, Wi-Fi: 0, Display Ethernet: 0}
+    current:  {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}
+    condition: bool(previous['Ethernet'] and not (current['Ethernet'] or current['Wi-Fi']))
+    '''
 
     if previous == current:
         return 'no_change'
 
-    previousEthernetServices = []
-    previous_ethernet = False
-    currentEthernetServices = []
-    current_ethernet = False
+    previous_ethernet = True in [val for key, val in previous.items() if search('Ethernet',key) and previous[key]]
+    current_ethernet = True in [val for key, val in current.items() if search('Ethernet',key) and current[key]]
 
-    for service in previous:
-        if search('Ethernet', service):
-            previousEthernetServices.append(service)
-    for service in previousEthernetServices:
-        previous_ethernet = previous_ethernet or previous[service]
-
-    for service in current:
-        if search('Ethernet', service):
-            currentEthernetServices.append(service)
-    for service in currentEthernetServices:
-        current_ethernet = current_ethernet or current[service]
-
-
-    #previous_ethernet = previous['Ethernet']
-    #if 'Display Ethernet' in previous.keys():
-    #   previous_ethernet = previous_ethernet or previous['Display Ethernet']
-    #current_ethernet = current['Ethernet']
-    #if 'Display Ethernet' in current.keys():
-    #    current_ethernet = current_ethernet or current['Display Ethernet']
-
-    if bool((current_ethernet and current['Wi-Fi']) and not previous_ethernet):
+    if bool((current_ethernet and current[wireless_service_name]) and not previous_ethernet):
         return 'wireless_off'
-    elif bool(previous_ethernet and not (current_ethernet or current['Wi-Fi'])):
+    elif bool(previous_ethernet and not (current_ethernet or current[wireless_service_name])):
         return 'wireless_on'
     else:
         return 'no_change'
 
-    # Service State Examples:
-
-    # no action-------------------------------------------------
-    
-    ## wireless turned on manually
-    # previous: {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}
-    # current:  {Ethernet: 0, Wi-Fi: 1, Display Ethernet: 0}
-    # condition: bool(current['Wi-Fi'] and not(previous['Ethernet'] or previous['Wi-Fi']))
-
-    ## ethernet plugged in when nothing was on
-    # previous: {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}    
-    # current:  {Ethernet: 1, Wi-Fi: 0, Display Ethernet: 0}
-    # condition: bool(current['Ethernet'] and not (previous['Ethernet'] or previous['Wi-Fi']))
-    
-    ## wireless turned off manually
-    # previous: {Ethernet: 0, Wi-Fi: 1, Display Ethernet: 0}
-    # current:  {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0} 
-    # condition: bool(not (current['Wi-Fi'] or current['Ethernet']) and previous['Wi-Fi'])
-
-    # -----------------------------------------------------------
-
-    # turn wireless off -----------------------------------------
-    
-    ## ethernet plugged in when wi-fi was on
-    # previous: {Ethernet: 0, Wi-Fi: 1, Display Ethernet: 0}
-    # current:  {Ethernet: 1, Wi-Fi: 1, Display Ethernet: 0}
-    # condition: bool((current['Ethernet'] and current['Wi-Fi']) and not previous['Ethernet'])
-
-    # -----------------------------------------------------------
-
-    # turn wireless on -----------------------------------------
-    
-    ## ethernet unplugged when wi-fi was off
-    # previous: {Ethernet: 1, Wi-Fi: 0, Display Ethernet: 0}
-    # current:  {Ethernet: 0, Wi-Fi: 0, Display Ethernet: 0}
-    # condition: bool(previous['Ethernet'] and not (current['Ethernet'] or current['Wi-Fi']))
-
-    #end function
 
 def get_hardware_device(service_name):
     port_info=check_output(['networksetup','-listallhardwareports']).split('\n')
     i=0
     while i<len(port_info):
-            if search(service_name,port_info[i]):
-                    return port_info[i+1].split(': ')[1]
-            else:
-                    i+=1   
-
-    #end function
+        if search(service_name,port_info[i]):
+            return port_info[i+1].split(': ')[1]
+        else:
+            i+=1
+    return None
 
 def toggle_wireless(wireless_service_name, turnOn=True):
     onOff='on'
@@ -156,18 +105,14 @@ def toggle_wireless(wireless_service_name, turnOn=True):
         onOff='off'
 
     service_device = get_hardware_device(wireless_service_name)
-    system('networksetup -setairportpower {0} {1}'.format(service_device,onOff))
-
-    #end function
+    call(['networksetup','-setairportpower',service_device,onOff])
 
 def write_state(flatfile_path, current_service_state):
     f=open(flatfile_path, 'w')
     for key in current_service_state:
-        f.write('{0}:{1}'.format(key, current_service_state[key]))
+        f.write('%s:%s' % (key, current_service_state[key]))
         f.write('\n')
     f.close()
-
-    #end function
 
 if __name__=='__main__':
     
@@ -182,22 +127,12 @@ if __name__=='__main__':
     # else, wireless service is named "Wi-Fi"
     sw_vers_info=check_output('sw_vers').split('\n')
     os_version=None
-    wireless_service='Wi-Fi'
 
-    for item in sw_vers_info:
-        if search('ProductVersion',item):
-            os_version=item.split('\t')[1].split('.')[1]
-    
-    if int(os_version) <= 6:
-        wireless_service='Airport'
-
+    os_version = [x for x in sw_vers_info if search('ProductVersion', x)][0]
+    wireless_service = 'Airport' if int(os_version.split('\t')[1].split('.')[1]) <= 6 else 'Wi-Fi'
 
     #capture all current service states (wireless and any ethernet services)
-    current_service_state = {}
-
-    service_list = get_all_services(wireless_service)
-    for service in service_list:
-        current_service_state[service] = get_service_state(service)
+    current_service_state = {x:get_service_state(x) for x in get_all_services(wireless_service)}
 
     #read in previous state from flatfile
     previous_service_state=get_previous_state(FLATFILE_PATH, wireless_service, 'Display Ethernet' in current_service_state.keys())
