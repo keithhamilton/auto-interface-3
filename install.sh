@@ -34,10 +34,10 @@ fi
 
 # cat out the launchd plist replacing the domain of the process
 sudo cat ${TMP_DIR}/src/${PLIST_PATH}/local.autointerface3.plist | sed 's/local\.autointerface3/com\.keithhamilton\.autointerface3/' > /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
-chmod 777 /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
+sudo chmod 777 /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
 
 # remove tmp dir
-rm -rf ${TMP_DIR}
+sudo rm -rf ${TMP_DIR}
 
 # run ai3.py
 python ${DEST_PATH}
