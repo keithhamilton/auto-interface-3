@@ -11,7 +11,7 @@ git clone https://github.com/keithhamilton/auto-interface-3 ${TMP_DIR}
 
 # make the lib directory if it doesn't exist
 if [ ! -e /usr/local/lib/auto-interface-3 ]; then
-    mkdir -p /usr/local/lib/auto-interface-3
+    sudo mkdir -p /usr/local/lib/auto-interface-3
 fi
 
 # remove any existing versions of auto-interface
@@ -28,12 +28,10 @@ if [ ! -e /usr/local/sbin ]; then
     sudo mkdir /usr/local/sbin
 fi
 # copy ai3.py into place
-sudo cp ${TMP_DIR}/src/${DEST_PATH} ${DEST_PATH}
+sudo cp ${TMP_DIR}/src/${DEST_PATH} /${DEST_PATH}
 
 # delete any existing autointerface launchd plists from previous installs
-if [ -e /Library/LaunchAgents/*autointerface* ]; then
-    sudo rm /Library/LaunchAgents/*autointerface*
-fi
+sudo rm /Library/LaunchAgents/*autointerface*
 
 # cat out the launchd plist replacing the domain of the process
 sudo cat ${TMP_DIR}/src/${PLIST_PATH}/local.autointerface3.plist | sed 's/local\.autointerface3/com\.keithhamilton\.autointerface3/' > /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
