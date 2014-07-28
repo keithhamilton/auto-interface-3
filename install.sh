@@ -24,6 +24,9 @@ if [ -e /Users/.previous-netstate ]; then
     rm /Users/.previous-netstate
 fi
 
+if [ ! -e /usr/local/sbin ]; then
+    mkdir /usr/local/sbin
+fi
 # copy ai3.py into place
 sudo cp ${TMP_DIR}/src/${DEST_PATH} ${DEST_PATH}
 
