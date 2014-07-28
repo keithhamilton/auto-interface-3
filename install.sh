@@ -16,7 +16,7 @@ fi
 
 # remove any existing versions of auto-interface
 if [ -e /usr/sbin/ai3.py ]; then
-    rm /usr/sbin/ai3.py
+    sudo rm /usr/sbin/ai3.py
 fi
 
 # remove legacy netstate file, if present
@@ -25,7 +25,7 @@ if [ -e /Users/.previous-netstate ]; then
 fi
 
 if [ ! -e /usr/local/sbin ]; then
-    mkdir /usr/local/sbin
+    sudo mkdir /usr/local/sbin
 fi
 # copy ai3.py into place
 sudo cp ${TMP_DIR}/src/${DEST_PATH} ${DEST_PATH}
