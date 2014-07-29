@@ -12,6 +12,7 @@ git clone https://github.com/keithhamilton/auto-interface-3 ${TMP_DIR}
 # make the lib directory if it doesn't exist
 if [ ! -e /usr/local/lib/auto-interface-3 ]; then
     sudo mkdir -p /usr/local/lib/auto-interface-3
+    chmod 777 /usr/local/lib/auto-interface-3
 fi
 
 # remove any existing versions of auto-interface
