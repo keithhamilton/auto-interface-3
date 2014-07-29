@@ -38,6 +38,7 @@ sudo rm /Library/LaunchAgents/*autointerface*
 cat ${TMP_DIR}/src/${PLIST_PATH}/local.autointerface3.plist | sed 's/local\.autointerface3/com\.keithhamilton\.autointerface3/' > ${TMP_DIR}/com.keithhamilton.autointerface3.plist
 sudo mv ${TMP_DIR}/com.keithhamilton.autointerface3.plist /${PLIST_PATH}
 sudo chmod 644 /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
+launchctl load /${PLIST_PATH}/com.keithhamilton.autointerface3.plist
 
 # remove tmp dir
 sudo rm -rf ${TMP_DIR}
